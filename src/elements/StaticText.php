@@ -44,7 +44,7 @@ class StaticText extends Element
         $fontsize = 10;
         if (isset($data->textElement->font)) {
             $fontElement = $data->textElement->font;
-            $font = $this->recommendFont($text, (string)($fontElement["fontName"] ?? ''), (string)($fontElement["pdfFontName"] ?? ''));
+            $font = (string)($fontElement["fontName"] ?? 'helvetica');
             $fontsize = (int) ($fontElement["size"] ?? 10);
             if ((string)($fontElement["isBold"] ?? 'false') == "true") $fontstyle .= "B";
             if ((string)($fontElement["isItalic"] ?? 'false') == "true") $fontstyle .= "I";
