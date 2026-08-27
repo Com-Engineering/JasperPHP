@@ -1,3 +1,7 @@
+> **このリポジトリは株式会社コム・エンジニアリングによるフォークです。**
+> 本家との差分（弊社修正）は [MATSUOKENZAI_PATCHES.md](MATSUOKENZAI_PATCHES.md) を参照してください。
+> アプリが参照するブランチは `integration/matsuokenzai-patches` です。
+
 ![alt text](https://cloud-1de12d.becdn.net/media/original/a10c0d62833293c1793e99504a249665/jasperLogo.png)
 
 # JasperPHP
