@@ -37,7 +37,7 @@ class StaticText extends Element
         $height = (int) $data->reportElement["height"];
         $rotation = (string) ($data->textElement["rotation"] ?? '');
         $align = $this->get_first_value($data->textElement["textAlignment"] ?? 'L');
-        $valign = $this->getVerticalAlignment($data->textElement["verticalAlignment"] ?? 'T');
+        $valign = $this->getVerticalAlignment((string) ($data->textElement["verticalAlignment"] ?? 'T'));
         
         $font = 'helvetica';
         $fontstyle = '';
@@ -56,9 +56,11 @@ class StaticText extends Element
         }
 
         $fill = ((string)($data->reportElement["mode"] ?? '') == "Opaque") ? 1 : 0;
-        $stretchoverflow = ((string)($data["isStretchWithOverflow"] ?? 'false') == "true");
-        $printoverflow = ((string)($data->reportElement["isPrintWhenDetailOverflows"] ?? 'false') == "true");
-        if ($printoverflow) $stretchoverflow = false;
+        // soverflow / poverflow は processor 側で文字列 "true"/"false" として比較されるため、
+        // bool ではなく文字列で渡す（TextField と同じ形式）。
+        $stretchoverflow = ((string)($data["isStretchWithOverflow"] ?? 'false') == "true") ? "true" : "false";
+        $printoverflow = ((string)($data->reportElement["isPrintWhenDetailOverflows"] ?? 'false') == "true") ? "true" : "false";
+        if ($printoverflow === "true") $stretchoverflow = "false";
 
         $textcolor = $this->report->getColor($data->reportElement["forecolor"] ?? '#000000');
         $fillcolor = $this->report->getColor($data->reportElement["backcolor"] ?? '#FFFFFF');
