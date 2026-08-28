@@ -688,27 +688,13 @@ class PdfProcessor
 
     public function print_expression($data)
     {
-        $expression = $data["printWhenExpression"];
-        $this->print_expression_result = false;
-        if ($expression != "") {
-            //echo      'if('.$expression.'){$this->print_expression_result=true;}';
-            $expression = $this->jasperObj->get_expression($expression, $this->jasperObj->rowData);
-
-            // WARNING: Using eval() can be a security risk and makes debugging difficult.
-            // A more robust solution would involve parsing and evaluating expressions without eval.
-            $oldErrorReporting = error_reporting(0); // Temporarily disable error reporting
-            try {
-                // Adicionando log para depuração
-                //$logger  = new \JasperPHP\database\TLoggerHTML('debug_eval.log'); // Certifique-se de que TLoggerHTML está disponível
-                //$logger->write("Expressão antes do eval: " . $expression);
-                eval('if(' . $expression . '){$this->print_expression_result=true;}');
-            } catch (\ParseError $e) {
-                $this->jasperObj->addDebugMessage("Erro de Parse na expressão (PdfProcessor): " . $expression . " - " . $e->getMessage());
-            } finally {
-                error_reporting($oldErrorReporting); // Restore original error reporting
-            }
-        } else
-            $this->print_expression_result = true;
+        // WARNING: Using eval() can be a security risk and makes debugging difficult.
+        // A more robust solution would involve parsing and evaluating expressions without eval.
+        $this->print_expression_result = $this->jasperObj->evaluatePrintWhen(
+            $data["printWhenExpression"],
+            $this->jasperObj->rowData,
+            'PdfProcessor'
+        );
     }
 
     public function rotate($arraydata)

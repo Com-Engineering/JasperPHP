@@ -89,6 +89,63 @@ class Report extends Element
         }
     }
 
+    /**
+     * 式の評価失敗を記録する
+     *
+     * debugMessages は debugMode のときしか溜まらず、しかも誰も読み出していないため、
+     * 失敗が完全に無言（要素が消えるだけ）になっていた。error_log にも必ず出す。
+     *
+     * @param string     $context    発生箇所（クラス名など）
+     * @param string     $expression 評価しようとした式（置換後）
+     * @param \Throwable $e
+     * @return void
+     */
+    public function logExpressionFailure($context, $expression, $e)
+    {
+        $message = sprintf(
+            '[JasperPHP] expression evaluation failed (%s): "%s" - %s',
+            $context,
+            $expression,
+            $e->getMessage()
+        );
+
+        $this->addDebugMessage($message);
+        error_log($message);
+    }
+
+    /**
+     * printWhenExpression を評価する
+     *
+     * 各要素に同じ eval が散在し、try/catch の有無もまちまちだったため共通化した。
+     * 失敗時は false（＝印字しない）を返し、必ずログに残す。
+     *
+     * @param string $expression 生の式（$F{} などを含む）
+     * @param mixed  $row        行データ
+     * @param string $context    発生箇所（ログ用）
+     * @return bool
+     */
+    public function evaluatePrintWhen($expression, $row, $context)
+    {
+        $expression = (string) $expression;
+        if ($expression === '') {
+            return true;
+        }
+
+        $evaluated = $this->get_expression($expression, $row);
+        $result = false;
+
+        $oldErrorReporting = error_reporting(0);
+        try {
+            eval('if(' . $evaluated . '){$result=true;}');
+        } catch (\Throwable $e) {
+            $this->logExpressionFailure($context, $evaluated, $e);
+        } finally {
+            error_reporting($oldErrorReporting);
+        }
+
+        return $result;
+    }
+
     public function charge($ObjElement, $param, $parentReport = null)
     {
 
@@ -515,7 +572,7 @@ class Report extends Element
                 $oldErrorReporting = error_reporting(0); // Temporarily disable error reporting
                 $mathValue = eval('return (' . $this->get_expression($out['target'], $row) . ');');
             } catch (\ParseError $e) {
-                $this->addDebugMessage("Erro de Parse na expressão (Report::variable_calculation): " . $this->get_expression($out['target'], $row) . " - " . $e->getMessage());
+                $this->logExpressionFailure('Report::variable_calculation', $this->get_expression($out['target'], $row), $e);
                 $mathValue = null; // Ensure $mathValue is set to null on error
             } finally {
                 error_reporting($oldErrorReporting); // Restore original error reporting

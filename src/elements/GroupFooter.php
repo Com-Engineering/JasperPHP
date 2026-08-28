@@ -22,13 +22,11 @@ class GroupFooter extends Element
             if (is_object($child)) {
                 $print_expression_result = false;
                 $printWhenExpression = (string) $child->objElement->printWhenExpression;
-
-                if ($printWhenExpression != '') {
-                    $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $this->report->rowData);
-                    eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-                } else {
-                    $print_expression_result = true;
-                }
+                $print_expression_result = $this->report->evaluatePrintWhen(
+                    $printWhenExpression,
+                    $this->report->rowData,
+                    'GroupFooter'
+                );
 
                 if ($print_expression_result) {
                     $splitType = (string) $child->objElement['splitType'];

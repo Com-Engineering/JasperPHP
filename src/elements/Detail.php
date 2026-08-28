@@ -110,21 +110,11 @@ class Detail extends Element
 
     private function evaluatePrintWhenExpression($element, $rowData)
     {
-        $printWhenExpression = (string) $element->objElement->printWhenExpression;
-        if ($printWhenExpression != '') {
-            $expression = $this->report->get_expression($printWhenExpression, $rowData);
-            $result = false;
-            $oldErrorReporting = error_reporting(0); // Temporarily disable error reporting
-        try {
-            eval('if(' . $expression . '){$result=true;}');
-        } catch (\ParseError $e) {
-            $this->report->addDebugMessage("Erro de Parse na expressão (Detail): " . $expression . " - " . $e->getMessage());
-        } finally {
-            error_reporting($oldErrorReporting); // Restore original error reporting
-        }
-            return $result;
-        }
-        return true;
+        return $this->report->evaluatePrintWhen(
+            (string) $element->objElement->printWhenExpression,
+            $rowData,
+            'Detail'
+        );
     }
 
     private function generateChildElement($element)

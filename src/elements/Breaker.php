@@ -24,21 +24,11 @@ class Breaker extends Element
 
     public function generate()
     {
-        $print_expression_result = false;
-
-        if ($this->printWhenExpression != '') {
-            $printWhenExpressionEvaluated = $this->report->get_expression($this->printWhenExpression, $this->report->rowData);
-            $oldErrorReporting = error_reporting(0); // Temporarily disable error reporting
-            try {
-                eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-            } catch (\ParseError $e) {
-                $this->report->addDebugMessage("Erro de Parse na expressão (Breaker): " . $printWhenExpressionEvaluated . " - " . $e->getMessage());
-            } finally {
-                error_reporting($oldErrorReporting); // Restore original error reporting
-            }
-        } else {
-            $print_expression_result = true;
-        }
+        $print_expression_result = $this->report->evaluatePrintWhen(
+            $this->printWhenExpression,
+            $this->report->rowData,
+            'Breaker'
+        );
 
         if ($print_expression_result && Report::$proccessintructionsTime == 'inline') {
             $pageFooter = $this->report->getChildByClassName('PageFooter');

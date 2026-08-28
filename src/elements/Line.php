@@ -21,14 +21,8 @@ class Line extends Element
         $data = $this->objElement;
         $rowData = $this->report->rowData;
 
-        $print_expression_result = false;
         $printWhenExpression = (string) $data->reportElement->printWhenExpression;
-        if ($printWhenExpression != '') {
-            $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $rowData);
-            eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-        } else {
-            $print_expression_result = true;
-        }
+        $print_expression_result = $this->report->evaluatePrintWhen($printWhenExpression, $rowData, 'Line');
 
         if (!$print_expression_result) {
             parent::generate();

@@ -27,13 +27,11 @@ class ColumnFooter extends Element
             if (is_object($child)) {
                 $print_expression_result = false;
                 $printWhenExpression = (string) $child->objElement->printWhenExpression;
-
-                if ($printWhenExpression != '') {
-                    $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $rowData);
-                    eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-                } else {
-                    $print_expression_result = true;
-                }
+                $print_expression_result = $this->report->evaluatePrintWhen(
+                    $printWhenExpression,
+                    $rowData,
+                    'ColumnFooter'
+                );
 
                 if ($print_expression_result) {
                     $splitType = (string) $this->children[0]->objElement['splitType'];

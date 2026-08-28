@@ -20,13 +20,11 @@ class ColumnHeader extends Element
     {
         $print_expression_result = false;
         $printWhenExpression = (string) $this->objElement->printWhenExpression;
-
-        if ($printWhenExpression != '') {
-            $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $this->report->rowData);
-            eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-        } else {
-            $print_expression_result = true;
-        }
+        $print_expression_result = $this->report->evaluatePrintWhen(
+            $printWhenExpression,
+            $this->report->rowData,
+            'ColumnHeader'
+        );
 
         if ($print_expression_result) {
             $splitType = (string) $this->children[0]->objElement->splitType;
