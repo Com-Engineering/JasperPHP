@@ -31,7 +31,7 @@
 | 1 | `0461010` | `src/elements/Report.php` | `getColor()` を `static` に変更。静的呼び出し箇所と宣言が食い違っており、PHP 8 で `Non-static method cannot be called statically` になっていた |
 | 2 | `6541f43` | `src/elements/StaticText.php` | `recommendFont()` を通さず `fontName` をそのまま使う。`recommendFont()` が日本語フォント（`ipaexg` 等）を別フォントに置き換えてしまい、`staticText`（見出し・固定文言）の日本語が化ける／出ないケースがあった |
 | 3 | `3770071` | `src/elements/StaticText.php` / `src/processors/PdfProcessor.php` | `staticText` の `verticalAlignment` が常に上揃えになる不具合。`PdfProcessor::checkoverflow()` が `soverflow` / `poverflow` を文字列 `"true"`/`"false"` で比較しているのに `StaticText` は bool を渡しており、`false == "false"` が成立せず `valign` を渡さない `else` 分岐に落ちていた（`textField` は文字列なので正常だった） |
-| 4 | （本コミット） | `src/elements/Report.php` ほか計9ファイル | printWhenExpression の評価失敗が無言で握りつぶされていた（要素が消えるだけでログにも出ない）。評価処理を `Report::evaluatePrintWhen()` に共通化し、失敗時は `error_log()` に必ず出すようにした。あわせて `Line` / `ColumnHeader` / `ColumnFooter` / `GroupHeader` / `GroupFooter` の try/catch 漏れ（ParseError で致命エラーになる）も解消 |
+| 4 | `652742a` | `src/elements/Report.php` ほか計9ファイル | printWhenExpression の評価失敗が無言で握りつぶされていた（要素が消えるだけでログにも出ない）。評価処理を `Report::evaluatePrintWhen()` に共通化し、失敗時は `error_log()` に必ず出すようにした。あわせて `Line` / `ColumnHeader` / `ColumnFooter` / `GroupHeader` / `GroupFooter` の try/catch 漏れ（ParseError で致命エラーになる）も解消 |
 
 ## 修正するときの手順
 
