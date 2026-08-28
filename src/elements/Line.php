@@ -24,6 +24,11 @@ class Line extends Element
         $printWhenExpression = (string) $data->reportElement->printWhenExpression;
         $print_expression_result = $this->report->evaluatePrintWhen($printWhenExpression, $rowData, 'Line');
 
+        // 命令には置換済みの式を入れる。描画時にもう一度評価されるが、その時点では
+        // 行データを参照できないため、生の式のままだと $F{} が空になって必ず false に
+        // なる（TextField / Image は元から置換済みの式を渡している）。
+        $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $rowData);
+
         if (!$print_expression_result) {
             parent::generate();
             return;
@@ -66,7 +71,7 @@ class Line extends Element
             "hidden_type" => $hidden_type,
             "style" => $style,
             "forecolor" => (string) ($data->reportElement["forecolor"] ?? '#000000'),
-            "printWhenExpression" => $printWhenExpression
+            "printWhenExpression" => $printWhenExpressionEvaluated
         ];
 
         if ($width > $height) { // Horizontal line

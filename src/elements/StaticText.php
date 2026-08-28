@@ -24,14 +24,12 @@ class StaticText extends Element
         $rowData = $this->report->rowData;
 
         $printWhenExpression = (string) ($data->reportElement->printWhenExpression ?? '');
-        if ($printWhenExpression !== '') {
-            $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $rowData);
-            $print_expression_result = false;
-            eval('if(' . $printWhenExpressionEvaluated . '){$print_expression_result=true;}');
-            if (!$print_expression_result) {
-                return;
-            }
+        if (!$this->report->evaluatePrintWhen($printWhenExpression, $rowData, 'StaticText')) {
+            return;
         }
+
+        // 命令には置換済みの式を入れる（理由は Line.php と同じ）
+        $printWhenExpressionEvaluated = $this->report->get_expression($printWhenExpression, $rowData);
 
         $text = (string) $data->text;
         $height = (int) $data->reportElement["height"];
@@ -91,7 +89,7 @@ class StaticText extends Element
             "align" => $align,
             "fill" => $fill,
             "hidden_type" => "statictext",
-            "printWhenExpression" => $printWhenExpression,
+            "printWhenExpression" => $printWhenExpressionEvaluated,
             "soverflow" => $stretchoverflow,
             "poverflow" => $printoverflow,
             "rotation" => $rotation,

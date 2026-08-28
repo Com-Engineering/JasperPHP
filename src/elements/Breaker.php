@@ -49,7 +49,14 @@ class Breaker extends Element
 
             Instructions::runInstructions();
         } else {
-            Instructions::addInstruction(["type" => "break", "printWhenExpression" => $this->printWhenExpression]);
+            // 命令には置換済みの式を入れる（理由は Line.php と同じ）
+            Instructions::addInstruction([
+                "type" => "break",
+                "printWhenExpression" => $this->report->get_expression(
+                    $this->printWhenExpression,
+                    $this->report->rowData
+                ),
+            ]);
             parent::generate();
         }
     }
