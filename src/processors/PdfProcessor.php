@@ -508,6 +508,17 @@ class PdfProcessor
         }
     }
 
+    /**
+     * soverflow / poverflow の値を "true" / "false" の文字列に正規化する。
+     */
+    private function normalizeOverflowFlag($value)
+    {
+        if (is_string($value)) {
+            return (strtolower($value) === "true") ? "true" : "false";
+        }
+        return $value ? "true" : "false";
+    }
+
     public function checkoverflow($obj)
     {
         $maxheight = 0;
@@ -520,6 +531,10 @@ class PdfProcessor
         //$pdf->SetFont($newfont,$pdf->getFontStyle(),$this->defaultFontSize);
         $this->print_expression($obj);
         $arraydata = $obj;
+        // 要素クラスによって bool と文字列 "true"/"false" が混在するため、以降の比較用に文字列へ正規化する。
+        // 正規化しないと bool の false が下の "false" 比較にマッチせず、valign を渡さない else 分岐に落ちる。
+        $arraydata["poverflow"] = $this->normalizeOverflowFlag($arraydata["poverflow"] ?? false);
+        $arraydata["soverflow"] = $this->normalizeOverflowFlag($arraydata["soverflow"] ?? false);
 
         $pdf->SetXY($arraydata["x"] + Instructions::$arrayPageSetting["leftMargin"], $arraydata["y"] + Instructions::$y_axis);
         $x = $pdf->GetX();
