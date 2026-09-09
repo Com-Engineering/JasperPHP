@@ -59,6 +59,14 @@ class Detail extends Element
             if (!empty($this->report->arrayGroup)) {
                 foreach ($this->report->arrayGroup as $group) {
                     if (($rowIndex == 1 || $group->resetVariables == 'true') && ($group->groupHeader)) {
+                        // <group isStartNewPage="true"> : start every group (except the
+                        // first one, which already sits on a fresh page) on a new page.
+                        if ($rowIndex > 1 && ((string) $group['isStartNewPage']) === 'true') {
+                            Instructions::addInstruction(["type" => "GroupPageBreak"]);
+                            if (Report::$proccessintructionsTime == 'inline') {
+                                Instructions::runInstructions();
+                            }
+                        }
                         $groupHeader = new GroupHeader($group->groupHeader, $this->report);
                         $groupHeader->generate();
                         $group->resetVariables = 'false';
