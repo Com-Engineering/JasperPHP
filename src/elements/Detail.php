@@ -55,22 +55,52 @@ class Detail extends Element
 			$this->report->arrayVariable['totalRows']['target'] = $totalRows;
             $this->report->arrayVariable['totalRows']['calculation'] = null;
 
+            // Remember which row is being laid out. Page breaks are only detected while
+            // the instructions run, long after this loop is over, so without this the
+            // report would still be pointing at the row that ended the loop (null) and
+            // any band regenerated at break time would resolve $F{} to "".
+            Instructions::addInstruction(["type" => "SetCurrentRow", "row" => $this->report->rowData]);
+
             // Group Headers
             if (!empty($this->report->arrayGroup)) {
-                foreach ($this->report->arrayGroup as $group) {
-                    if (($rowIndex == 1 || $group->resetVariables == 'true') && ($group->groupHeader)) {
-                        // <group isStartNewPage="true"> : start every group (except the
-                        // first one, which already sits on a fresh page) on a new page.
-                        if ($rowIndex > 1 && ((string) $group['isStartNewPage']) === 'true') {
-                            Instructions::addInstruction(["type" => "GroupPageBreak"]);
-                            if (Report::$proccessintructionsTime == 'inline') {
-                                Instructions::runInstructions();
-                            }
+                // Groups starting on this row: their header is printed below anyway, so a
+                // page break happening right now must not reprint them on top of that.
+                $startingGroups = [];
+                foreach ($this->report->arrayGroup as $groupName => $group) {
+                    if ($rowIndex == 1 || $group->resetVariables == 'true') {
+                        $startingGroups[] = (string) $groupName;
+                    }
+                }
+                if ($startingGroups) {
+                    Instructions::addInstruction(["type" => "SetStartingGroups", "groups" => $startingGroups]);
+                }
+
+                foreach ($this->report->arrayGroup as $groupName => $group) {
+                    if ($rowIndex != 1 && $group->resetVariables != 'true') {
+                        continue;
+                    }
+
+                    // <group isStartNewPage="true"> : start every group (except the
+                    // first one, which already sits on a fresh page) on a new page.
+                    if ($rowIndex > 1 && ((string) $group['isStartNewPage']) === 'true') {
+                        Instructions::addInstruction(["type" => "GroupPageBreak"]);
+                        if (Report::$proccessintructionsTime == 'inline') {
+                            Instructions::runInstructions();
                         }
+                    }
+
+                    if ($group->groupHeader) {
                         $groupHeader = new GroupHeader($group->groupHeader, $this->report);
                         $groupHeader->generate();
-                        $group->resetVariables = 'false';
                     }
+
+                    // Cleared for every group, not only the ones owning a header, so that
+                    // a header-less group does not stay "resetting" for the rest of the run.
+                    $group->resetVariables = 'false';
+                }
+
+                if ($startingGroups) {
+                    Instructions::addInstruction(["type" => "SetStartingGroups", "groups" => []]);
                 }
             }
 
@@ -98,13 +128,17 @@ class Detail extends Element
 
             if (isset($this->report->lastRowData) && !empty($this->report->arrayGroup)) {
                 foreach ($this->report->arrayGroup as $group) {
-                    if (isset($group->groupExpression) && isset($group->groupFooter)) {
+                    // The group break itself does not depend on owning a groupFooter;
+                    // the footer is merely printed when there is one.
+                    if (isset($group->groupExpression)) {
                         $currentGroupValue = $this->report->get_expression($group->groupExpression, $newRowData);
                         $previousGroupValue = $this->report->get_expression($group->groupExpression, $this->report->lastRowData);
 
                         if ($currentGroupValue != $previousGroupValue) {
-                            $groupFooter = new \JasperPHP\elements\GroupFooter($group->groupFooter, $this->report);
-                            $groupFooter->generate();
+                            if (isset($group->groupFooter)) {
+                                $groupFooter = new \JasperPHP\elements\GroupFooter($group->groupFooter, $this->report);
+                                $groupFooter->generate();
+                            }
                             $group->resetVariables = 'true';
                         }
                     }

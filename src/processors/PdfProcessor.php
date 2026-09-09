@@ -18,6 +18,8 @@ class PdfProcessor
     private $jasperObj;
     private $print_expression_result;
     private static $instance;
+    /** Groups whose header Detail is emitting right now (see SetStartingGroups). */
+    private $startingGroups = array();
 
     public function __construct(\JasperPHP\elements\Report $jasperObj = null)
     {
@@ -104,6 +106,26 @@ class PdfProcessor
     }
 
     /**
+     * Records the groups whose header Detail is emitting around this point, so a page
+     * break landing in the middle of them does not reprint what is about to be printed.
+     * Detail sets the list before the headers and clears it afterwards.
+     */
+    public function SetStartingGroups($arraydata)
+    {
+        $this->startingGroups = $arraydata["groups"];
+    }
+
+    /**
+     * Restores the row the report was laid out at, so that bands regenerated while the
+     * instructions run (repeated group headers) resolve $F{} against the right record.
+     * Emitted by Detail once per row.
+     */
+    public function SetCurrentRow($arraydata)
+    {
+        $this->jasperObj->rowData = $arraydata["row"];
+    }
+
+    /**
      * Closes the current page and opens a new one:
      * page footer -> AddPage -> page header -> column header (when repeated).
      */
@@ -128,7 +150,31 @@ class PdfProcessor
             if ($columnHeader)
                 $columnHeader->generate($this->jasperObj);
         }
+        $this->reprintGroupHeaders();
         Instructions::runInstructions();
+    }
+
+    /**
+     * Reprints the header of every group declaring isReprintHeaderOnEachPage="true",
+     * so a group spanning several pages keeps its heading on each of them.
+     * Groups currently being started by Detail are left out: their header is printed
+     * right after this anyway, so reprinting them here would duplicate it.
+     */
+    private function reprintGroupHeaders()
+    {
+        if (empty($this->jasperObj->arrayGroup)) {
+            return;
+        }
+        foreach ($this->jasperObj->arrayGroup as $groupName => $group) {
+            if (((string) $group["isReprintHeaderOnEachPage"]) !== 'true' || !$group->groupHeader) {
+                continue;
+            }
+            if (in_array((string) $groupName, $this->startingGroups, true)) {
+                continue;
+            }
+            $groupHeader = new \JasperPHP\elements\GroupHeader($group->groupHeader, $this->jasperObj);
+            $groupHeader->generate();
+        }
     }
 
     public function resetY_axis($arraydata)
