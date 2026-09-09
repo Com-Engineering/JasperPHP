@@ -90,26 +90,45 @@ class PdfProcessor
 
 
         if ($preventY_axis >= $discount) {
-            if ($pageFooter) {
-                Instructions::$lastPageFooter = false;
-                $pageFooter->generate($this->jasperObj);
-            }
-            Instructions::addInstruction(array("type" => "resetY_axis"));
-            Instructions::$currrentPage++;
-            Instructions::addInstruction(array("type" => "AddPage"));
-            Instructions::addInstruction(array("type" => "setPage", "value" => Instructions::$currrentPage, 'resetMargins' => false));
-            Instructions::runInstructions();
-            $pageHeader = $this->jasperObj->getChildByClassName('PageHeader');
-            if ($pageHeader)
-                $pageHeader->generate($this->jasperObj);
-            //repeat column header?
-            if ($this->jasperObj::$columnHeaderRepeat) {
-                $columnHeader = $this->jasperObj->getChildByClassName('ColumnHeader');
-                if ($columnHeader)
-                    $columnHeader->generate($this->jasperObj);
-            }
-            Instructions::runInstructions();
+            $this->startNewPage();
         }
+    }
+
+    /**
+     * Forces a page break requested by the report itself (not caused by overflow).
+     * Emitted by Detail for groups declared with isStartNewPage="true".
+     */
+    public function GroupPageBreak($arraydata)
+    {
+        $this->startNewPage();
+    }
+
+    /**
+     * Closes the current page and opens a new one:
+     * page footer -> AddPage -> page header -> column header (when repeated).
+     */
+    public function startNewPage()
+    {
+        $pageFooter = $this->jasperObj->getChildByClassName('PageFooter');
+        if ($pageFooter) {
+            Instructions::$lastPageFooter = false;
+            $pageFooter->generate($this->jasperObj);
+        }
+        Instructions::addInstruction(array("type" => "resetY_axis"));
+        Instructions::$currrentPage++;
+        Instructions::addInstruction(array("type" => "AddPage"));
+        Instructions::addInstruction(array("type" => "setPage", "value" => Instructions::$currrentPage, 'resetMargins' => false));
+        Instructions::runInstructions();
+        $pageHeader = $this->jasperObj->getChildByClassName('PageHeader');
+        if ($pageHeader)
+            $pageHeader->generate($this->jasperObj);
+        //repeat column header?
+        if ($this->jasperObj::$columnHeaderRepeat) {
+            $columnHeader = $this->jasperObj->getChildByClassName('ColumnHeader');
+            if ($columnHeader)
+                $columnHeader->generate($this->jasperObj);
+        }
+        Instructions::runInstructions();
     }
 
     public function resetY_axis($arraydata)
