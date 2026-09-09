@@ -34,6 +34,7 @@
 | 4 | `652742a` | `src/elements/Report.php` ほか計9ファイル | printWhenExpression の評価失敗が無言で握りつぶされていた（要素が消えるだけでログにも出ない）。評価処理を `Report::evaluatePrintWhen()` に共通化し、失敗時は `error_log()` に必ず出すようにした。あわせて `Line` / `ColumnHeader` / `ColumnFooter` / `GroupHeader` / `GroupFooter` の try/catch 漏れ（ParseError で致命エラーになる）も解消 |
 | 5 | `3219ef5` | `src/elements/Line.php` / `StaticText.php` / `Breaker.php` | 命令に渡す printWhenExpression が生の式のままで、描画時の再評価では行データを参照できず $F{} が空になり必ず false になっていた（要素が無言で消える）。`TextField` / `Image` と同じく置換済みの式を渡すよう揃えた。これにより `line` / `staticText` の要素単位 printWhenExpression が使えるようになった |
 | 6 | `ceefc72` | `src/elements/Detail.php` / `src/processors/PdfProcessor.php` | `<group isStartNewPage="true">` が効かず、グループ（月など）が切り替わっても改ページされなかった。属性がライブラリに一切読まれていない上流の未実装。`PreventY_axis()` 内の改ページ処理を `startNewPage()` に切り出し、明示的な改ページ命令 `GroupPageBreak` を追加。`Detail` が groupHeader を出す直前（2件目以降のグループ）に発行する。groupHeader を持たないグループは対象外 |
+| 7 | `652343d` | `src/elements/Detail.php` / `src/processors/PdfProcessor.php` | `<group isReprintHeaderOnEachPage="true">` が効かず、グループがページをまたぐと2ページ目以降に見出しが出なかった。`startNewPage()` で該当グループの groupHeader を再生成するようにした。あわせて (a) 実行時は rowData が null で 再印字した見出しの `$F{}` が全て空になる問題を `SetCurrentRow` 命令（行の復元）で解消、(b) 見出し生成中の改ページで二重印字になる問題を `SetStartingGroups` 命令で解消、(c) グループ切替の検知を groupFooter の有無から切り離し（`ceefc72` の既知の制限も解消）。`$V{}` は実行時に最終値のままになるため再印字ヘッダでは使えない |
 
 ## 修正するときの手順
 
