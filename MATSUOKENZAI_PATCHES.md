@@ -33,6 +33,7 @@
 | 3 | `3770071` | `src/elements/StaticText.php` / `src/processors/PdfProcessor.php` | `staticText` の `verticalAlignment` が常に上揃えになる不具合。`PdfProcessor::checkoverflow()` が `soverflow` / `poverflow` を文字列 `"true"`/`"false"` で比較しているのに `StaticText` は bool を渡しており、`false == "false"` が成立せず `valign` を渡さない `else` 分岐に落ちていた（`textField` は文字列なので正常だった） |
 | 4 | `652742a` | `src/elements/Report.php` ほか計9ファイル | printWhenExpression の評価失敗が無言で握りつぶされていた（要素が消えるだけでログにも出ない）。評価処理を `Report::evaluatePrintWhen()` に共通化し、失敗時は `error_log()` に必ず出すようにした。あわせて `Line` / `ColumnHeader` / `ColumnFooter` / `GroupHeader` / `GroupFooter` の try/catch 漏れ（ParseError で致命エラーになる）も解消 |
 | 5 | `3219ef5` | `src/elements/Line.php` / `StaticText.php` / `Breaker.php` | 命令に渡す printWhenExpression が生の式のままで、描画時の再評価では行データを参照できず $F{} が空になり必ず false になっていた（要素が無言で消える）。`TextField` / `Image` と同じく置換済みの式を渡すよう揃えた。これにより `line` / `staticText` の要素単位 printWhenExpression が使えるようになった |
+| 6 | `ceefc72` | `src/elements/Detail.php` / `src/processors/PdfProcessor.php` | `<group isStartNewPage="true">` が効かず、グループ（月など）が切り替わっても改ページされなかった。属性がライブラリに一切読まれていない上流の未実装。`PreventY_axis()` 内の改ページ処理を `startNewPage()` に切り出し、明示的な改ページ命令 `GroupPageBreak` を追加。`Detail` が groupHeader を出す直前（2件目以降のグループ）に発行する。groupHeader を持たないグループは対象外 |
 
 ## 修正するときの手順
 
