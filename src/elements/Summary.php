@@ -26,6 +26,10 @@ class Summary extends Element
         $height = (string) $band->objElement['height'];
         $splitType = (string) $band->objElement['splitType'];
 
+        // From here on the report is past its detail: pages opened while the summary is
+        // laid out must not repeat the column header / group headers (as in JasperReports).
+        Instructions::addInstruction(["type" => "BeginSummary", "report" => $this->report]);
+
         if ($splitType == 'Stretch' || $splitType == 'Prevent') {
             Instructions::addInstruction(["type" => "PreventY_axis", "y_axis" => $height]);
         }
