@@ -20,6 +20,8 @@ class PdfProcessor
     private static $instance;
     /** Groups whose header Detail is emitting right now (see SetStartingGroups). */
     private $startingGroups = array();
+    /** Report whose summary band is being laid out (see BeginSummary). */
+    private $summaryReport = null;
 
     public function __construct(\JasperPHP\elements\Report $jasperObj = null)
     {
@@ -116,6 +118,17 @@ class PdfProcessor
     }
 
     /**
+     * Marks the start of a report's summary band. Pages opened after this for the same
+     * report get only the page header: the column header and group headers belong to
+     * the detail, so repeating them above the summary would be wrong.
+     * Emitted by Summary.
+     */
+    public function BeginSummary($arraydata)
+    {
+        $this->summaryReport = $arraydata["report"];
+    }
+
+    /**
      * Restores the row the report was laid out at, so that bands regenerated while the
      * instructions run (repeated group headers) resolve $F{} against the right record.
      * Emitted by Detail once per row.
@@ -128,6 +141,7 @@ class PdfProcessor
     /**
      * Closes the current page and opens a new one:
      * page footer -> AddPage -> page header -> column header (when repeated).
+     * Within the summary band only the page header is printed.
      */
     public function startNewPage()
     {
@@ -144,13 +158,15 @@ class PdfProcessor
         $pageHeader = $this->jasperObj->getChildByClassName('PageHeader');
         if ($pageHeader)
             $pageHeader->generate($this->jasperObj);
-        //repeat column header?
-        if ($this->jasperObj::$columnHeaderRepeat) {
-            $columnHeader = $this->jasperObj->getChildByClassName('ColumnHeader');
-            if ($columnHeader)
-                $columnHeader->generate($this->jasperObj);
+        if ($this->summaryReport !== $this->jasperObj) {
+            //repeat column header?
+            if ($this->jasperObj::$columnHeaderRepeat) {
+                $columnHeader = $this->jasperObj->getChildByClassName('ColumnHeader');
+                if ($columnHeader)
+                    $columnHeader->generate($this->jasperObj);
+            }
+            $this->reprintGroupHeaders();
         }
-        $this->reprintGroupHeaders();
         Instructions::runInstructions();
     }
 
